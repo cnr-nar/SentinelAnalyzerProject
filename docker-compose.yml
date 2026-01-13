@@ -1,0 +1,46 @@
+networks:
+  sentinel-net:
+    driver: bridge
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    networks:
+      - sentinel-net
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    networks:
+      - sentinel-net
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # İki farklı adres tanımlıyoruz: 
+      # LISTENER_DOCKER_INTERNAL -> Diğer konteynerler için (UI, Java)
+      # LISTENER_DOCKER_EXTERNAL -> Senin Python scriptin için
+      KAFKA_LISTENERS: LISTENER_DOCKER_INTERNAL://0.0.0.0:29092,LISTENER_DOCKER_EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:29092,LISTENER_DOCKER_EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+    depends_on:
+      - zookeeper
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      - sentinel-net
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      # UI artık iç kapı olan 29092'den bağlanıyor
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+    depends_on:
+      - kafka
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
