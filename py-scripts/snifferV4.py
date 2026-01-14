@@ -31,24 +31,20 @@ def delivery_report(err, msg):
 def process_and_send(packet):
     try:
         if IP in packet:
-            src = packet[IP].src
-
-            payload = ""
-            if packet.haslayer('Raw'):
-                payload = str(packet['Raw'].load)
+            src_ip = packet[IP].src
             
             # Java/Analyzer bir IP'yi 'banned_ips' setine eklemiş mi kontrol et
-            if r.sismember("banned_ips", src):
+            if r.sismember("banned_ips", src_ip):
                 # Eğer IP banlıysa, trafiği Kafka'ya göndermeden burada düşür (drop)
-                # print(f" [!] BLOCKED: Traffic from {src} dropped.")
+                # Konsolda çok fazla kirlilik olmaması için loglamayı opsiyonel tutabilirsin
+                # print(f" [!] BLOCKED: Traffic from {src_ip} dropped.")
                 return 
 
             packet_data = {
-                "src": src,
+                "src": src_ip,
                 "dst": packet[IP].dst,
                 "proto": packet[IP].proto,
                 "len": len(packet),
-                "payload": payload,
                 "timestamp": float(packet.time)
             }
 

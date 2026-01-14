@@ -41,3 +41,37 @@ export const useSentinelWS = () => {
 
   return { alerts, isConnected }; // Burada 'alerts' döndüğümüzden emin oluyoruz
 };
+
+export const useSentinelFirewall = () => {
+  const [bannedIPs, setBannedIPs] = useState<string[]>([]);
+
+  const fetchBannedIPs = async () => {
+    const res = await fetch('http://localhost:8083/api/firewall/banned');
+    const data = await res.json();
+    setBannedIPs(data);
+  };
+
+  const unblockIP = async (ip: string) => {
+    await fetch(`http://localhost:8083/api/firewall/unblock/${ip}`, { method: 'DELETE' });
+    fetchBannedIPs();
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBannedIPs = async () => {
+      if (isMounted) {
+        await fetchBannedIPs();
+      }
+    };
+
+    loadBannedIPs();
+    const interval = setInterval(loadBannedIPs, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  return { bannedIPs, unblockIP };
+}

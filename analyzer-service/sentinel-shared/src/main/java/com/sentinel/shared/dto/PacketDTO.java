@@ -22,6 +22,9 @@ public class PacketDTO {
     @JsonProperty("len")
     private int len;
 
+    @JsonProperty("payload")
+    private String payload;
+
     @JsonProperty("timestamp")
-    private String flags;
+    private double timestamp;
 }
