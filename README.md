@@ -1,3 +1,7 @@
+
+<img width="1024" height="1024" alt="ProjectArchitecture" src="https://github.com/user-attachments/assets/4adf3b9a-b131-4b5d-a6ea-9b6b2b34803b" />
+
+
 🛡️ Sentinel-System: Distributed Network Anomaly Detector
 Concept: A high-performance, modular platform designed to detect network-level anomalies in real-time by bridging low-level data capture with high-level asynchronous processing.
 
