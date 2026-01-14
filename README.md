@@ -1,91 +1,55 @@
-(EN)🛡️ SentinelAnalyzerProject: System Architecture
-1. Data Collection Layer (Python Sniffer)
-This layer acts as the "sensory organ," capturing raw network packets and integrating them into the system.
+🛡️ Sentinel-System: Distributed Network Anomaly Detector
+Concept: A high-performance, modular platform designed to detect network-level anomalies in real-time by bridging low-level data capture with high-level asynchronous processing.
 
-Packet Capture: Developing a script using Scapy or PyShark libraries to monitor network traffic.
+🏗️ System Architecture
+1. Data Collection Layer (Sensory Organ)
+Acts as the frontline probe, capturing raw network telemetry and preparing it for the pipeline.
 
-Feature Extraction: Converting raw data (IP, port, packet size, protocol, etc.) into numerical features compatible with Machine Learning models.
+Packet Capture: Leveraging Scapy to monitor network interfaces in promiscuous mode.
 
-Kafka Producer: Streaming processed data to the Apache Kafka raw-traffic topic with low latency.
+Feature Extraction: Transforming raw hex data (IP headers, TCP/UDP flags, packet sizes) into structured numerical vectors.
 
-2. Messaging and Queuing Layer (Apache Kafka & Redis)
-The "central nervous system" that ensures modularity and scalability.
+Asynchronous Production: Streaming processed telemetry to the raw-traffic Kafka topic with optimized batching to ensure zero packet loss.
 
-Kafka Cluster Setup: Deploying Kafka and Zookeeper (or KRaft) using Docker.
+2. Messaging & Orchestration Layer (Central Nervous System)
+Ensures total decoupling between data collection and heavy analysis.
 
-Speed and Buffering: Queuing high-volume data from Python before it is passed to the Java backend.
+Apache Kafka: Acts as a persistent message buffer, providing backpressure management; even if the analysis layer spikes in CPU usage, the capture layer continues uninterrupted.
 
-Fast Access (Redis): A caching layer to provide real-time statistics or the latest detected anomalies to the Dashboard instantly.
+Redis (Fast Access): A sub-millisecond caching layer used for Real-Time Frequency Analysis (e.g., tracking IP hit rates) and providing instant state updates to the dashboard.
 
-3. Analysis and Decision Mechanism (Python ML)
-The "brain" of the system, responsible for determining whether the data is "abnormal."
+3. Analysis & Decision Engine (The Brain)
+Responsible for intelligence-driven anomaly classification.
 
-Model Training: Teaching the system normal traffic patterns using Scikit-learn (e.g., via Isolation Forest or Random Forest algorithms).
+Machine Learning (Scikit-learn): Employs algorithms like Isolation Forest or Random Forest to distinguish between normal traffic patterns and malicious signatures (e.g., DDoS, Port Scanning).
 
-Real-time Prediction: Processing incoming Kafka data through the model to label it as "Attack/Anomaly" or "Normal."
+Real-time Inference: Consumes from Kafka, runs the ML model, and publishes "Anomaly Alerts" back to the orchestration layer.
 
-Result Transmission: Publishing analysis results back to the Kafka alerts topic.
+4. Processing & Visualization Layer (Processing Hub)
+The high-density data processing unit built with Java 21.
 
-4. Processing and Visualization Layer (Java 21 & Spring Boot)
-The component that handles high-density data processing using Java 21’s Virtual Threads (Project Loom).
+Virtual Threads (Project Loom): Implements a VirtualThreadPerTaskExecutor to achieve massive concurrency. Unlike traditional platform threads (1MB/thread), virtual threads allow the system to handle thousands of concurrent Kafka events with minimal memory footprint—ideal for embedded environments.
 
-Consumption via Virtual Threads: Writing Kafka consumers that process thousands of alerts in parallel without exhausting system resources.
+Reactive Dashboard: Exposes a WebSocket API for real-time alert streaming, ensuring security analysts see threats as they happen.
 
-API Development: Creating a REST or WebSocket API with Spring Boot to expose anomaly data.
+⚙️ Optimization & "Embedded Awareness"
+The project is specifically designed to run on resource-constrained hardware (e.g., TAI/ASELSAN edge devices).
 
-Dashboard: Developing a user interface featuring real-time charts (speed, traffic density, anomaly counts).
+Deterministic Resource Limiting: Tested under strict Docker constraints (cpus: 0.5, memory: 512M) to simulate embedded system conditions.
 
-5. Optimization and Deployment (Docker & Resource Limiting)
-The stage where the project gains "Embedded Awareness."
+Memory Footprint Optimization: JVM tuning with custom Xmx and Xms flags to ensure stability without Garbage Collection (GC) overhead.
 
-Containerization: Writing Dockerfiles for each module (Java, Python, Kafka).
+Benchmarking: Validated the performance gains of Virtual Threads over traditional threading models under restricted CPU cycles.
 
-Resource Constraints: Testing performance on low-end hardware (like Raspberry Pi) by setting cpus: 0.5 and memory: 512M limits in Docker Compose.
+🛠️ Tech Stack
+Language: Java 21 (Virtual Threads), Python 3.10
 
-Performance Benchmarking: Measuring the advantages of Java Virtual Threads over traditional threading models under restricted resource conditions.
+Streaming: Apache Kafka
 
-(TR)🛡️ SentinelAnalyzerProject: 
-1. Katman: Veri Toplama (Python Sniffer)
-Bu katman, ağdaki ham paketleri yakalayıp sisteme dahil eden "duyu organıdır".
+Caching/Fast-State: Redis
 
-Paket Yakalama: Scapy veya PyShark kütüphanelerini kullanarak ağ trafiğini dinleyen bir script yazılması.
+Intelligence: Scikit-learn (Machine Learning)
 
-Özellik Çıkarımı (Feature Extraction): Ham veriden (IP, port, paket boyutu, protokol vb.) ML modelinin anlayabileceği sayısal verilerin oluşturulması.
+Infrastructure: Docker & Docker Compose
 
-Kafka Producer: İşlenen bu verilerin düşük gecikmeyle Apache Kafka'ya "raw-traffic" topic'i üzerinden gönderilmesi.
-
-2. Katman: Mesajlaşma ve Kuyruk (Apache Kafka & Redis)
-Sistemin modülerliğini ve ölçeklenebilirliğini sağlayan merkezi sinir sistemidir.
-
-Kafka Cluster Kurulumu: Docker üzerinde Kafka ve Zookeeper (veya KRaft) ayağa kaldırılması.
-
-Hız ve Tamponlama: Python'dan gelen yoğun verinin Java tarafına geçmeden önce kuyruğa alınması.
-
-Hızlı Erişim (Redis): Anlık istatistiklerin veya son tespit edilen anomalilerin hızlıca Dashboard'a sunulması için önbellekleme katmanı.
-
-3. Katman: Analiz ve Karar Mekanizması (Python ML)
-Verinin "anormal" olup olmadığına karar veren beyin kısmıdır.
-
-Model Eğitimi: Scikit-learn ile (örneğin Isolation Forest veya Random Forest kullanarak) normal trafik desenlerinin öğretilmesi.
-
-Gerçek Zamanlı Tahmin: Kafka'dan gelen verilerin modele sokularak "Saldırı/Anomali" veya "Normal" olarak etiketlenmesi.
-
-Sonuç İletimi: Analiz sonuçlarının tekrar Kafka'daki "alerts" topic'ine basılması.
-
-4. Katman: İşleme ve Görselleştirme (Java 21 & Spring Boot)
-Java 21'in Virtual Threads (Project Loom) özelliğini kullanarak yüksek yoğunluklu veriyi işleme kısmıdır.
-
-Virtual Threads ile Tüketim: Kafka'dan gelen binlerce alarmı, sistem kaynaklarını tüketmeden paralel olarak işleyecek "Consumer"ların yazılması.
-
-API Geliştirme: Spring Boot ile anomali verilerini dış dünyaya sunan bir REST veya WebSocket API oluşturulması.
-
-Dashboard: Gerçek zamanlı grafikler (hız, trafik yoğunluğu, anomali sayısı) içeren bir arayüz geliştirilmesi.
-
-5. Katman: Optimizasyon ve Dağıtım (Docker & Resource Limiting)
-Projenin "Gömülü Sistem Farkındalığı" (Embedded Awareness) kazandığı aşamadır.
-
-Konteynerleştirme: Her modülün (Java, Python, Kafka) Dockerfile'larının yazılması.
-
-Kaynak Kısıtlama: Docker Compose üzerinde cpus: 0.5 ve memory: 512M gibi limitler koyarak, yazılımın düşük donanımlı cihazlarda (Raspberry Pi gibi) nasıl performans gösterdiğinin test edilmesi.
-
-Performans İyileştirme: Kısıtlı kaynak altında Java Virtual Threads kullanımının geleneksel thread yapısına göre avantajlarının ölçümlenmesi.
+Visualization: Spring Boot (WebSockets) & Next.js
