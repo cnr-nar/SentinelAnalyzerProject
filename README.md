@@ -57,3 +57,6 @@ Intelligence: Scikit-learn (Machine Learning)
 Infrastructure: Docker & Docker Compose
 
 Visualization: Spring Boot (WebSockets) & Next.js
+
+
+!!Note: To use it you need Geolite2 files!!

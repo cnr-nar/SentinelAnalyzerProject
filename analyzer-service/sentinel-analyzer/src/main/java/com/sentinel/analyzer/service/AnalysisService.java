@@ -40,6 +40,7 @@ public class AnalysisService {
         if (packet.getSrc() == null) return;
 
         //Thread-Intel Control
+
         if (threatIntelService.isIpMalicious(packet.getSrc())){
             handleAnomaly(packet,"IP Blacklisted (Known Threat Actor)");
             return;
@@ -79,6 +80,8 @@ public class AnalysisService {
     }
 
     private void handleAnomaly(PacketDTO packet, String reason){
+        //String country = threatIntelService.getCountry(packet.getSrc());
+        Map<String,String> location = threatIntelService.getLocationInfo(packet.getSrc());
         log.warn("!!! ANOMALY DETECTED: {} | Reason: {}", packet, reason);
 
         String bankey = "banned_ips";
@@ -90,6 +93,8 @@ public class AnalysisService {
         alertPayload.put("src", packet.getSrc());
         alertPayload.put("dst",packet.getDst());
         alertPayload.put("reason",reason);
+        alertPayload.put("country",location.get("country"));
+        alertPayload.put("city", location.get("city"));
         kafkaTemplate.send("alerts", alertPayload);
     }
 }

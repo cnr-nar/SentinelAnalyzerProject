@@ -54,3 +54,6 @@ logs/
 # Misc
 Thumbs.db
 desktop.ini
+Geolite2-ASN.mmdb
+Geolite2-City.mmdb
+Geolite2-Country.mmdb

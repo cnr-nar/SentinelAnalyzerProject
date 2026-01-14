@@ -25,6 +25,10 @@ public class PacketDTO {
     @JsonProperty("payload")
     private String payload;
 
+    private String country;
+
+    private String city;
+
     @JsonProperty("timestamp")
     private double timestamp;
 }
