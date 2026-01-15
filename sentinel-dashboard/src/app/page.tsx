@@ -1,15 +1,21 @@
 "use client";
 import { useSentinelWS } from '@/hooks/useSentinelWS';
 import { useSentinelFirewall } from '@/hooks/useSentinelWS'; 
-import { ShieldAlert, Activity, ShieldCheck, Zap, UserMinus, ShieldX, BrainCircuit } from 'lucide-react';
+import { ShieldAlert, Activity, ShieldCheck, Zap, UserMinus, ShieldX, BrainCircuit, Globe, MapPin } from 'lucide-react';
+import ThreatMap from '@/components/ThreatMap'; // Harita bileşenini import et
 
 export default function Home() {
   const { alerts, isConnected } = useSentinelWS();
   const { bannedIPs, unblockIP } = useSentinelFirewall();
 
+  const threatMapAlerts = alerts.map(alert => ({
+    ...alert,
+    country: alert.country || 'Unknown'
+  }));
+
   return (
-    <div className="min-h-screen bg-black text-slate-200 font-sans p-6">
-      {/* Animasyon Stili - Bunu global CSS'e de koyabilirsin ama burada inline kalsın */}
+    <div className="min-h-screen bg-black text-slate-200 font-sans p-6 overflow-x-hidden">
+      {/* Animasyonlar ve Global Stiller */}
       <style jsx global>{`
         @keyframes purpleGlow {
           0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.2); border-color: rgba(168, 85, 247, 0.3); }
@@ -18,130 +24,163 @@ export default function Home() {
         .animate-ai-glow {
           animation: purpleGlow 3s ease-in-out infinite;
         }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
       `}</style>
 
-      {/* Header */}
-      <header className="flex justify-between items-center mb-10 border-b border-slate-800 pb-5">
+      {/* Header Section */}
+      <header className="flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-600 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-            <ShieldCheck className="text-white" size={28} />
+          <div className="p-2 bg-blue-600 rounded-lg shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+            <ShieldCheck className="text-white" size={24} />
           </div>
-          <h1 className="text-2xl font-black tracking-tighter uppercase italic">
-            Sentinel <span className="text-blue-500 underline decoration-2">Guardian</span>
+          <h1 className="text-xl font-black tracking-tighter uppercase italic">
+            Sentinel <span className="text-blue-500 underline decoration-2 underline-offset-4">Guardian</span>
+            <span className="ml-2 text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full not-italic tracking-normal">v2.0 Enterprise</span>
           </h1>
         </div>
         
-        <div className="flex items-center gap-4 bg-slate-900/50 px-4 py-2 rounded-full border border-slate-700">
-          <div className={`w-3 h-3 rounded-full animate-pulse ${isConnected ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-red-500'}`} />
-          <span className="text-sm font-mono uppercase tracking-widest text-[10px]">
-            System: {isConnected ? 'Online' : 'Offline'}
-          </span>
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex flex-col items-end">
+            <span className="text-[9px] uppercase text-slate-500 font-bold tracking-widest">Active Threats</span>
+            <span className="text-red-500 font-mono font-bold">{alerts.length} Detects</span>
+          </div>
+          <div className="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_10px_#22c55e] animate-pulse' : 'bg-red-500'}`} />
+            <span className="text-xs font-mono font-bold uppercase tracking-tighter">
+              {isConnected ? 'Link Stable' : 'Link Offline'}
+            </span>
+          </div>
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* SOL PANEL */}
-        <div className="space-y-6">
-          <div className="bg-slate-900/40 p-6 rounded-2xl border border-red-900/30">
-            <div className="flex items-center gap-3 mb-6 text-red-500 font-bold uppercase tracking-tight italic">
-              <ShieldX size={20} />
-              <h2>Firewall Control</h2>
+        {/* HARİTA PANELİ - Üst Orta (Tam Genişlik) */}
+        <div className="lg:col-span-12 xl:col-span-8 order-2 xl:order-1">
+           <ThreatMap alerts={threatMapAlerts} />
+        </div>
+
+        {/* STATS & FIREWALL - Sol Panel */}
+        <div className="lg:col-span-12 xl:col-span-4 space-y-6 order-1 xl:order-2">
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-2 gap-4">
+             <div className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+                <div className="flex items-center gap-2 text-blue-400 mb-2">
+                   <Zap size={16} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Throughput</span>
+                </div>
+                <p className="text-2xl font-mono font-bold">{alerts.length * 12}</p>
+                <p className="text-slate-500 text-[9px] uppercase italic">Packets/Sec</p>
+             </div>
+             <div className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+                <div className="flex items-center gap-2 text-purple-400 mb-2">
+                   <BrainCircuit size={16} />
+                   <span className="text-[10px] font-bold uppercase tracking-widest">Neural Load</span>
+                </div>
+                <p className="text-2xl font-mono font-bold">%{Math.min(alerts.length * 3, 99)}</p>
+                <p className="text-slate-500 text-[9px] uppercase italic">AI Inference</p>
+             </div>
+          </div>
+
+          {/* Firewall List */}
+          <div className="bg-slate-900/40 p-6 rounded-2xl border border-red-900/30 backdrop-blur-md">
+            <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center gap-2 text-red-500 font-bold uppercase text-xs tracking-widest">
+                  <ShieldX size={18} />
+                  <h2>Active Ban List</h2>
+               </div>
+               <span className="bg-red-500/10 text-red-500 text-[10px] px-2 py-0.5 rounded-full border border-red-500/20 font-bold">
+                  {bannedIPs.length} IPs
+               </span>
             </div>
             
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-800">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {bannedIPs.length === 0 ? (
-                <div className="text-slate-600 text-xs italic text-center py-8 border border-dashed border-slate-800 rounded-xl">
-                  No active threats blocked.
+                <div className="text-slate-600 text-[10px] uppercase tracking-widest text-center py-10 border border-dashed border-slate-800 rounded-xl">
+                  Grid Secure - No Bans
                 </div>
               ) : (
                 bannedIPs.map((ip) => (
-                  <div key={ip} className="flex justify-between items-center bg-red-950/10 border border-red-900/20 p-3 rounded-xl">
-                    <span className="font-mono text-sm text-red-200">{ip}</span>
-                    <button onClick={() => unblockIP(ip)} className="p-1.5 text-slate-500 hover:text-green-400">
-                      <UserMinus size={16} />
+                  <div key={ip} className="group flex justify-between items-center bg-red-950/10 border border-red-900/20 p-3 rounded-lg hover:bg-red-900/20 transition-colors">
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                       <span className="font-mono text-sm text-red-200">{ip}</span>
+                    </div>
+                    <button onClick={() => unblockIP(ip)} className="p-1.5 text-slate-600 hover:text-green-400 hover:bg-green-500/10 rounded-md transition-all">
+                      <UserMinus size={14} />
                     </button>
                   </div>
                 ))
               )}
             </div>
           </div>
-
-          <div className="bg-slate-900/40 p-6 rounded-2xl border border-slate-800">
-            <div className="flex items-center gap-3 mb-4 text-blue-400">
-              <Zap size={20} />
-              <h2 className="font-bold uppercase tracking-tight">Real-time Load</h2>
-            </div>
-            <p className="text-4xl font-mono font-bold">{alerts.length * 12}</p>
-            <p className="text-slate-500 text-sm mt-1 font-mono uppercase text-[10px] tracking-widest">Global Analysis / Sec</p>
-          </div>
         </div>
 
-        {/* SAĞ PANEL: Canlı Tehdit Akışı */}
-        <div className="lg:col-span-2 bg-slate-900/20 rounded-3xl border border-slate-800 p-8 backdrop-blur-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4 text-red-500">
-              <ShieldAlert className="animate-pulse" size={24} />
-              <h2 className="text-xl font-bold uppercase tracking-[0.15em]">Security Logs</h2>
+        {/* ALT PANEL: LOG AKIŞI (Security Logs) */}
+        <div className="lg:col-span-12 bg-slate-900/20 rounded-3xl border border-slate-800 p-6 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3 text-red-500">
+              <Activity className="animate-pulse" size={20} />
+              <h2 className="text-sm font-black uppercase tracking-[0.2em]">Intercepted Threat Stream</h2>
+            </div>
+            <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+              Live Feed • Buffer: 100 Events
             </div>
           </div>
 
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2">
             {alerts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-600 italic">
-                <p>Waiting for incoming network data...</p>
+              <div className="col-span-full h-32 flex items-center justify-center text-slate-700 uppercase tracking-widest text-[10px]">
+                Searching for Anomalies...
               </div>
             ) : (
-              alerts.map((alert, index) => {
+              [...alerts].reverse().map((alert, index) => {
                 const isAI = alert.reason.toLocaleUpperCase().includes('AI');
                 
                 return (
                   <div 
                     key={index} 
-                    className={`group relative border p-5 rounded-xl transition-all duration-500 ${
+                    className={`p-4 rounded-xl border transition-all hover:scale-[1.01] ${
                       isAI 
-                        ? 'bg-purple-950/20 border-purple-500/30 animate-ai-glow' 
-                        : 'bg-red-950/10 border-red-900/30'
+                        ? 'bg-purple-950/10 border-purple-500/30 animate-ai-glow' 
+                        : 'bg-red-950/5 border-red-900/20'
                     }`}
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase tracking-widest font-bold ${
-                            isAI ? 'text-purple-400 bg-purple-500/10 border-purple-500/40' : 'text-red-500 bg-red-500/10 border-red-500/20'
-                          }`}>
-                            {isAI ? 'Neural Detection' : 'Standard Alert'}
-                          </span>
-                          
-                          <h3 className={`font-bold text-lg tracking-tight flex items-center gap-2 ${isAI ? 'text-purple-200' : 'text-red-100'}`}>
-                            {isAI && <BrainCircuit size={18} className="text-purple-400 animate-pulse" />}
-                            {alert.reason}
-                          </h3>
-                        </div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2">
+                         <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase ${
+                           isAI ? 'text-purple-400 bg-purple-500/10 border-purple-500/40' : 'text-red-500 bg-red-500/10 border-red-500/20'
+                         }`}>
+                           {isAI ? 'Neural' : 'Signature'}
+                         </span>
+                         <h3 className="font-bold text-sm text-slate-200 line-clamp-1">{alert.reason}</h3>
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-600 font-bold">{new Date().toLocaleTimeString()}</span>
+                    </div>
 
-                        <div className="flex gap-3 text-sm font-mono">
-                          <div className="bg-black/60 px-3 py-1.5 rounded-lg border border-slate-800">
-                             <span className="text-slate-500 text-[10px] block uppercase mb-0.5">Source</span>
-                             <span className="text-slate-300">{alert.src}</span>
-                          </div>
-                          <div className="bg-black/60 px-3 py-1.5 rounded-lg border border-slate-800">
-                             <span className="text-slate-500 text-[10px] block uppercase mb-0.5">Destination</span>
-                             <span className="text-slate-300">{alert.dst}</span>
-                          </div>
+                    <div className="flex items-center gap-4 text-[11px] font-mono">
+                      <div className="flex-1 bg-black/40 p-2 rounded border border-slate-800/50">
+                        <span className="text-slate-500 text-[8px] block uppercase">Origin</span>
+                        <div className="flex items-center gap-1.5">
+                           <MapPin size={10} className="text-blue-500" />
+                           <span className="text-slate-300">{alert.src}</span>
+                           <span className="text-blue-400/60 text-[9px] ml-auto font-bold">[{alert.country || 'TR'}]</span>
                         </div>
                       </div>
-                      
-                      <span className="text-[10px] font-mono text-slate-600 bg-slate-950 px-2 py-1 rounded border border-slate-800">
-                        {new Date().toLocaleTimeString()}
-                      </span>
+                      <div className="flex-1 bg-black/40 p-2 rounded border border-slate-800/50">
+                        <span className="text-slate-500 text-[8px] block uppercase">Target Vector</span>
+                        <div className="flex items-center gap-1.5">
+                           <Globe size={10} className="text-slate-500" />
+                           <span className="text-slate-400">{alert.dst}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
               })
             )}
           </div>
-          
-          <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/5 blur-[120px] pointer-events-none rounded-full" />
         </div>
       </main>
     </div>

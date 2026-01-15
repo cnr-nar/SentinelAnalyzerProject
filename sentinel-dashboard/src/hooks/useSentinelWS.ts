@@ -1,17 +1,18 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-// Java'dan gelecek veri yapısı
 export interface Alert {
   src: string;
   dst: string;
   reason: string;
+  country?: string;
+  city?: string;
 }
 
 export const useSentinelWS = () => {
-  const [alerts, setAlerts] = useState<Alert[]>([]); // 'messages' yerine 'alerts'
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export const useSentinelWS = () => {
           if (message.body) {
             try {
               const newAlert: Alert = JSON.parse(message.body);
-              setAlerts((prev) => [newAlert, ...prev].slice(0, 20));
+              setAlerts((prev) => [newAlert, ...prev].slice(0, 50));
             } catch (e) {
               console.error("JSON Parse Error:", e);
             }
@@ -39,39 +40,53 @@ export const useSentinelWS = () => {
     return () => { if (client.active) client.deactivate(); };
   }, []);
 
-  return { alerts, isConnected }; // Burada 'alerts' döndüğümüzden emin oluyoruz
+  return { alerts, isConnected };
 };
 
 export const useSentinelFirewall = () => {
   const [bannedIPs, setBannedIPs] = useState<string[]>([]);
 
-  const fetchBannedIPs = async () => {
-    const res = await fetch('http://localhost:8083/api/firewall/banned');
-    const data = await res.json();
-    setBannedIPs(data);
-  };
-
-  const unblockIP = async (ip: string) => {
-    await fetch(`http://localhost:8083/api/firewall/unblock/${ip}`, { method: 'DELETE' });
-    fetchBannedIPs();
-  };
+  const fetchBannedIPs = useCallback(async (isMounted: boolean) => {
+    try {
+      const res = await fetch('http://localhost:8083/api/firewall/banned');
+      if (res.ok) {
+        const data = await res.json();
+        if (isMounted) setBannedIPs(data);
+      }
+    } catch (e) {
+      console.error("Firewall API error:", e);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadBannedIPs = async () => {
-      if (isMounted) {
-        await fetchBannedIPs();
-      }
+    // HATANIN ÇÖZÜMÜ: Fonksiyonu senkron bir void çağrısı içine alıyoruz.
+    // Bu sayede React, asenkron akışın kontrolünü devralır.
+    const loadInitialData = () => {
+      void fetchBannedIPs(isMounted);
     };
 
-    loadBannedIPs();
-    const interval = setInterval(loadBannedIPs, 5000);
+    loadInitialData();
+
+    const interval = setInterval(() => {
+      void fetchBannedIPs(isMounted);
+    }, 5000);
+
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [fetchBannedIPs]); 
+
+  const unblockIP = async (ip: string) => {
+    try {
+      await fetch(`http://localhost:8083/api/firewall/unblock/${ip}`, { method: 'DELETE' });
+      void fetchBannedIPs(true);
+    } catch (e) {
+       console.error("Unblock error:", e);
+    }
+  };
 
   return { bannedIPs, unblockIP };
-}
+};

@@ -35,7 +35,15 @@ public class AnalysisService {
 
     }
 
+    public void processPacket(PacketDTO packet) {
+        analyze(packet);
+    }
+
     @KafkaListener(topics = "raw-traffic", groupId = "sentinel-analyzer-group")
+    public void handleKafkaTraffic(PacketDTO packet) {
+        analyze(packet);
+    }
+
     public void analyze(PacketDTO packet){
         if (packet.getSrc() == null) return;
 
