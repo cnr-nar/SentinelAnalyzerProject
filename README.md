@@ -121,5 +121,3 @@ Environment-specific configuration is managed through the `.env` file.
 Sentinel-System demonstrates that high-performance, intelligent network anomaly detection can be achieved without sacrificing determinism or deployability. By integrating modern JVM concurrency models, distributed messaging, and machine learning, the platform provides a sovereign, scalable, and future-ready foundation for securing critical network infrastructures.
 
 ---
-
-**Sentinel-System — Security, Scalability, Sovereignty.**
