@@ -1,0 +1,14 @@
+# Build aşaması
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+WORKDIR /app
+# Tüm projeyi kopyala (Multi-module olduğu için tüm yapıya ihtiyaç var)
+COPY . .
+# Sadece çalışacak jar dosyasını üret
+RUN mvn clean package -DskipTests
+
+# Çalıştırma aşaması
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+# sentinel-analyzer alt modülünün jar dosyasını kopyala
+COPY --from=build /app/sentinel-analyzer/target/*.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]

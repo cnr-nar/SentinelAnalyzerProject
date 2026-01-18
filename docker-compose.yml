@@ -59,6 +59,51 @@ services:
       - sentinel-net
     ports:
       - "6379:6379"
+  
+  analyzer:
+    build: ./analyzer-service
+    container_name: sentinel-analyzer-service
+    networks:
+      - sentinel-net
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_REDIS_HOST=redis
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/sentinel_db
+    depends_on:
+      - kafka
+      - redis
+      - postgres
+
+  dashboard:
+    build: ./sentinel-dashboard
+    container_name: sentinel-dashboard-ui
+    ports:
+      - "3000:3000"
+    networks:
+      - sentinel-net
+    depends_on:
+      - analyzer
+
+  sniffer:
+    build: ./py-scripts
+    container_name: sentinel-sniffer
+    network_mode: "host" # Gerçek ağ paketlerini yakalamak için host mode şart
+    environment:
+      - KAFKA_SERVER=localhost:9092 # Host mode kullandığı için localhost
+    depends_on:
+      - kafka
+  ai-worker:
+    build: ./py-scripts
+    container_name: sentinel-ai-worker
+    command: python sentinel_ai_worker.py
+    networks:
+      - sentinel-net
+    environment:
+      # Docker içinde Kafka'ya servis ismiyle erişiriz
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      - kafka
 
 volumes:
   postgres_data:
+

@@ -1,4 +1,5 @@
 import json
+import os
 import numpy as np
 from confluent_kafka import Producer, Consumer
 from sklearn.ensemble import IsolationForest
@@ -11,15 +12,17 @@ X_train = np.array([[6, 64], [17, 128], [6, 1500], [1, 32], [6, 40], [17, 72]])
 model = IsolationForest(contamination=0.1, random_state=42)
 model.fit(X_train)
 
-# 2. Kafka Yapılandırması
+KAFKA_SERVER = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+
+# 2. Kafka Yapılandırması 
 consumer = Consumer({
-    'bootstrap.servers': 'localhost:9092',
+    'bootstrap.servers': KAFKA_SERVER, 
     'group.id': 'sentinel-ai-engine',
-    'auto.offset.reset': 'latest',
-    'enable.auto.commit': True
+    'auto.offset.reset': 'latest'
 })
+
 consumer.subscribe(['raw-traffic'])
-producer = Producer({'bootstrap.servers': 'localhost:9092'})
+producer = Producer({'bootstrap.servers': KAFKA_SERVER})
 
 print("AI Engine Online: Behavior Analysis Started...")
 

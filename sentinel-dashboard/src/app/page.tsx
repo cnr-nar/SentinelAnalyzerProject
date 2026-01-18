@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState } from 'react'; // useEffect ve useState eklendi
-import { useSentinelWS } from '@/hooks/useSentinelWS';
-import { useSentinelFirewall } from '@/hooks/useSentinelWS'; 
-import { ShieldAlert, Activity, ShieldCheck, Zap, UserMinus, ShieldX, BrainCircuit, Globe, MapPin, History } from 'lucide-react';
+import { useEffect } from 'react'; // useEffect ve useState eklendi
+import { useSentinelWS ,useSentinelFirewall } from '@/hooks/useSentinelWS';
+import { Activity, ShieldCheck, Zap, UserMinus, ShieldX, BrainCircuit, Globe, MapPin, History } from 'lucide-react';
 import ThreatMap from '@/components/ThreatMap';
 
 interface HistoryItem {
@@ -151,7 +150,7 @@ export default function Home() {
               <div className="col-span-full h-32 flex items-center justify-center text-slate-700 uppercase tracking-widest text-[10px]">Searching for Anomalies...</div>
             ) : (
               [...alerts].reverse().map((alert, index) => {
-                const hasAI = alert.aiNote && alert.aiNote.includes("CRITICAL");
+                const hasAI = alert.aiNote?.includes("CRITICAL");
                 
                 return (
                   <div key={index} className={`p-4 rounded-xl border transition-all hover:scale-[1.01] ${hasAI ? 'bg-purple-950/10 border-purple-500/30 animate-ai-glow' : 'bg-red-950/5 border-red-900/20'}`}>

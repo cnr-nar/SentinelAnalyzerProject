@@ -1,147 +1,125 @@
-# 🛡️ Sentinel-System: Distributed Network Anomaly Detector
+# Sentinel-System
 
-## 📋 Overview
-
-**Sentinel-System** is a high-performance, modular platform for real-time network anomaly detection. It bridges low-level packet capture with high-level asynchronous analysis, providing a robust and scalable defense mechanism for critical infrastructure.
-
-The system is designed with **determinism**, **low latency**, and **horizontal scalability** as first-class principles, making it suitable for both enterprise cloud deployments and resource-constrained edge devices.
+## A Distributed, Real-Time Network Anomaly Detection Platform
 
 ---
 
-## 🏗️ System Architecture
+## Abstract
 
-Sentinel-System is structured into four distinct layers, inspired by a biological defense mechanism:
-
-### 1️⃣ Data Collection Layer (Sensory Organ)
-
-The frontline probe responsible for capturing and preprocessing raw network telemetry.
-
-* **Packet Capture**: Uses *Scapy* to monitor network interfaces in promiscuous mode.
-* **Feature Extraction**: Transforms raw packet data (IP headers, TCP/UDP flags, packet sizes) into structured numerical feature vectors.
-* **Asynchronous Production**: Streams processed telemetry to **Apache Kafka** with optimized batching to prevent packet loss during peak traffic.
+Modern critical infrastructures face increasingly sophisticated network-based threats that demand deterministic, low-latency, and scalable detection mechanisms. **Sentinel-System** is a distributed network anomaly detection platform designed to bridge the gap between raw packet-level telemetry and high-level intelligent analysis. By combining real-time packet capture, message-oriented middleware, machine learning–based inference, and modern concurrency primitives, Sentinel-System delivers a resilient and deployable solution for both cloud-scale environments and resource-constrained edge systems.
 
 ---
 
-### 2️⃣ Messaging & Orchestration (Central Nervous System)
+## 1. Introduction
 
-Ensures full decoupling between data ingestion and computationally intensive analysis.
+The exponential growth of network traffic, coupled with the rise of automated and distributed attacks (e.g., DDoS, reconnaissance scanning, protocol abuse), has rendered traditional signature-based intrusion detection systems insufficient. Sentinel-System addresses this challenge through a modular architecture that emphasizes:
 
-* **Apache Kafka**: Acts as a persistent message buffer and backpressure manager.
-* **Redis (In-Memory State)**: Sub-millisecond caching layer for:
+* Deterministic behavior under load
+* Low end-to-end detection latency
+* Horizontal scalability and fault isolation
+* Deployability on constrained hardware
 
-  * Real-time frequency analysis
-  * Instant state synchronization for the security dashboard
-
----
-
-### 3️⃣ Analysis & Decision Engine (The Brain)
-
-The intelligence core responsible for anomaly detection and classification.
-
-* **Machine Learning Models**:
-
-  * *Isolation Forest* for detecting stochastic anomalies
-  * *Random Forest* for identifying deterministic malicious patterns (e.g., DDoS, port scanning)
-* **Real-Time Inference**:
-
-  * Consumes telemetry from Kafka
-  * Executes ML inference
-  * Publishes anomaly alerts back to the orchestration layer
+The system is particularly suited for high-integrity environments such as defense networks, industrial control systems, and sovereign cloud infrastructures.
 
 ---
 
-### 4️⃣ Processing & Visualization (Command Center)
+## 2. System Architecture
 
-High-density processing and visualization layer built with modern Java.
+Sentinel-System follows a layered architecture inspired by biological defense systems, where each layer has a clearly defined responsibility and failure domain.
 
-* **Java 21 + Project Loom**:
+### 2.1 Data Collection Layer (Sensory Organ)
 
-  * Uses `VirtualThreadPerTaskExecutor`
-  * Enables massive concurrency with minimal memory overhead compared to traditional threads
-* **Reactive Dashboard**:
+This layer operates at the network edge and is responsible for transforming raw traffic into structured telemetry.
 
-  * Streams real-time alerts via WebSockets (Spring Boot)
-  * Visualized through a **Next.js** frontend for instant situational awareness
+* **Packet Capture**: Network interfaces are monitored in promiscuous mode using Scapy, enabling full visibility into ingress and egress traffic.
+* **Feature Engineering**: Low-level packet attributes (IP headers, TCP/UDP flags, packet lengths, temporal features) are transformed into numerical vectors suitable for downstream analysis.
+* **Asynchronous Emission**: Feature vectors are published to Apache Kafka using optimized batching strategies to ensure lossless ingestion during traffic bursts.
 
----
+### 2.2 Messaging and Orchestration (Central Nervous System)
 
-## ⚙️ Optimization & Embedded Awareness
+This layer decouples data producers from consumers, ensuring system stability under variable load.
 
-Sentinel-System is optimized for deployment in constrained environments such as edge gateways and defense systems.
+* **Apache Kafka** provides durable message storage, replayability, and backpressure management.
+* **Redis** functions as a high-speed, in-memory state store, supporting real-time frequency analysis and instantaneous synchronization with visualization components.
 
-* **Deterministic Resource Allocation**:
+### 2.3 Analysis and Decision Engine (Cognitive Core)
 
-  * Validated under strict Docker limits (`cpus: 0.5`, `memory: 512M`)
-* **JVM Tuning**:
+The analytical core of Sentinel-System performs real-time classification and anomaly detection.
 
-  * Custom `-Xms` and `-Xmx` settings
-  * Reduced GC overhead and latency spikes
-* **High Throughput**:
+* **Unsupervised Learning**: Isolation Forest models identify deviations from baseline network behavior.
+* **Supervised Learning**: Random Forest classifiers detect deterministic malicious patterns such as port scanning and volumetric attacks.
+* **Streaming Inference**: Consumers process Kafka streams, execute inference with bounded latency, and publish structured anomaly events.
 
-  * Benchmarked to demonstrate the efficiency of **Virtual Threads** under limited CPU resources
+### 2.4 Processing and Visualization Layer (Command Center)
 
----
+This layer provides operational awareness and human-in-the-loop interaction.
 
-## 🛠️ Technology Stack
-
-| Layer               | Technologies                                    |
-| ------------------- | ----------------------------------------------- |
-| Languages           | Java 21 (Virtual Threads), Python 3.10          |
-| Messaging           | Apache Kafka                                    |
-| Persistence & Cache | PostgreSQL (Forensics), Redis (Real-Time State) |
-| Intelligence        | Scikit-learn                                    |
-| Infrastructure      | Docker, Docker Compose                          |
-| Frontend            | Next.js, Tailwind CSS, Lucide Icons             |
+* **Java 21 with Project Loom**: Virtual threads (`VirtualThreadPerTaskExecutor`) enable massive concurrency while maintaining a minimal memory footprint.
+* **Reactive Interfaces**: A Spring Boot–based WebSocket service streams alerts to a Next.js dashboard for near-instant situational awareness.
 
 ---
 
-## 🚀 Getting Started
+## 3. Performance and Resource Determinism
 
-### Prerequisites
+Sentinel-System is explicitly engineered for environments with strict resource constraints.
+
+* **Containerized Validation**: Tested under Docker limits of 0.5 CPU cores and 512 MB RAM.
+* **JVM Memory Discipline**: Carefully tuned heap sizing (`-Xms`, `-Xmx`) minimizes garbage collection pauses.
+* **Concurrency Efficiency**: Empirical benchmarks demonstrate superior throughput and latency stability of virtual threads compared to traditional platform threads under constrained CPU budgets.
+
+---
+
+## 4. Technology Stack
+
+| Component           | Technologies           |
+| ------------------- | ---------------------- |
+| Languages           | Java 21, Python 3.10   |
+| Messaging           | Apache Kafka           |
+| State & Persistence | Redis, PostgreSQL      |
+| Machine Learning    | Scikit-learn           |
+| Infrastructure      | Docker, Docker Compose |
+| Visualization       | Next.js, Tailwind CSS  |
+
+---
+
+## 5. Deployment
+
+### 5.1 Prerequisites
 
 * Docker
 * Docker Compose
 
-### GeoIP Databases
+### 5.2 GeoIP Integration
 
-For IP geolocation features, download and place the following files in the `resources` directory:
+For geolocation enrichment, the following MaxMind databases must be provided in the `resources` directory:
 
 * `GeoLite2-City.mmdb`
 * `GeoLite2-Country.mmdb`
 
-(Available from MaxMind)
+### 5.3 Installation Procedure
+
+```bash
+git clone https://github.com/cnr-nar/SentinelAnalyzerProject.git
+cd SentinelAnalyzerProject
+docker-compose up -d
+```
+
+Environment-specific configuration is managed through the `.env` file.
 
 ---
 
-### Installation
+## 6. Compliance, Auditability, and Response
 
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/cnr-nar/SentinelAnalyzerProject.git
-   ```
-
-2. **Configure environment variables**
-   Update the `.env` file with your database credentials and required API keys.
-
-3. **Deploy the system**
-
-   ```bash
-   docker-compose up -d
-   ```
+* **Forensic Persistence**: All high-severity anomalies are persisted in PostgreSQL for post-incident analysis.
+* **Automated Mitigation**: Redis-backed banning and throttling mechanisms enable rapid response workflows.
+* **Design Principles**: The system adheres to clean architecture and modular design practices aligned with modern cybersecurity monitoring standards.
 
 ---
 
-## 📝 Compliance & Standards
+## 7. Conclusion
 
-* **Modular Architecture**: Follows clean code and modular design principles
-* **Forensic Persistence**: All critical alerts are stored in PostgreSQL for audit and investigation
-* **Automated Response**: Redis-based banning mechanisms enable rapid mitigation
-
-Designed for **high-integrity network environments**.
+Sentinel-System demonstrates that high-performance, intelligent network anomaly detection can be achieved without sacrificing determinism or deployability. By integrating modern JVM concurrency models, distributed messaging, and machine learning, the platform provides a sovereign, scalable, and future-ready foundation for securing critical network infrastructures.
 
 ---
 
-## 🔐 Sentinel-System
-
-**Security. Scalability. Sovereignty.**
+**Sentinel-System — Security, Scalability, Sovereignty.**
