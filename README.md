@@ -1,62 +1,147 @@
+# 🛡️ Sentinel-System: Distributed Network Anomaly Detector
 
-<img width="1024" height="1024" alt="ProjectArchitecture" src="https://github.com/user-attachments/assets/4adf3b9a-b131-4b5d-a6ea-9b6b2b34803b" />
+## 📋 Overview
 
+**Sentinel-System** is a high-performance, modular platform for real-time network anomaly detection. It bridges low-level packet capture with high-level asynchronous analysis, providing a robust and scalable defense mechanism for critical infrastructure.
 
-🛡️ Sentinel-System: Distributed Network Anomaly Detector
-Concept: A high-performance, modular platform designed to detect network-level anomalies in real-time by bridging low-level data capture with high-level asynchronous processing.
+The system is designed with **determinism**, **low latency**, and **horizontal scalability** as first-class principles, making it suitable for both enterprise cloud deployments and resource-constrained edge devices.
 
-🏗️ System Architecture
-1. Data Collection Layer (Sensory Organ)
-Acts as the frontline probe, capturing raw network telemetry and preparing it for the pipeline.
+---
 
-Packet Capture: Leveraging Scapy to monitor network interfaces in promiscuous mode.
+## 🏗️ System Architecture
 
-Feature Extraction: Transforming raw hex data (IP headers, TCP/UDP flags, packet sizes) into structured numerical vectors.
+Sentinel-System is structured into four distinct layers, inspired by a biological defense mechanism:
 
-Asynchronous Production: Streaming processed telemetry to the raw-traffic Kafka topic with optimized batching to ensure zero packet loss.
+### 1️⃣ Data Collection Layer (Sensory Organ)
 
-2. Messaging & Orchestration Layer (Central Nervous System)
-Ensures total decoupling between data collection and heavy analysis.
+The frontline probe responsible for capturing and preprocessing raw network telemetry.
 
-Apache Kafka: Acts as a persistent message buffer, providing backpressure management; even if the analysis layer spikes in CPU usage, the capture layer continues uninterrupted.
+* **Packet Capture**: Uses *Scapy* to monitor network interfaces in promiscuous mode.
+* **Feature Extraction**: Transforms raw packet data (IP headers, TCP/UDP flags, packet sizes) into structured numerical feature vectors.
+* **Asynchronous Production**: Streams processed telemetry to **Apache Kafka** with optimized batching to prevent packet loss during peak traffic.
 
-Redis (Fast Access): A sub-millisecond caching layer used for Real-Time Frequency Analysis (e.g., tracking IP hit rates) and providing instant state updates to the dashboard.
+---
 
-3. Analysis & Decision Engine (The Brain)
-Responsible for intelligence-driven anomaly classification.
+### 2️⃣ Messaging & Orchestration (Central Nervous System)
 
-Machine Learning (Scikit-learn): Employs algorithms like Isolation Forest or Random Forest to distinguish between normal traffic patterns and malicious signatures (e.g., DDoS, Port Scanning).
+Ensures full decoupling between data ingestion and computationally intensive analysis.
 
-Real-time Inference: Consumes from Kafka, runs the ML model, and publishes "Anomaly Alerts" back to the orchestration layer.
+* **Apache Kafka**: Acts as a persistent message buffer and backpressure manager.
+* **Redis (In-Memory State)**: Sub-millisecond caching layer for:
 
-4. Processing & Visualization Layer (Processing Hub)
-The high-density data processing unit built with Java 21.
+  * Real-time frequency analysis
+  * Instant state synchronization for the security dashboard
 
-Virtual Threads (Project Loom): Implements a VirtualThreadPerTaskExecutor to achieve massive concurrency. Unlike traditional platform threads (1MB/thread), virtual threads allow the system to handle thousands of concurrent Kafka events with minimal memory footprint—ideal for embedded environments.
+---
 
-Reactive Dashboard: Exposes a WebSocket API for real-time alert streaming, ensuring security analysts see threats as they happen.
+### 3️⃣ Analysis & Decision Engine (The Brain)
 
-⚙️ Optimization & "Embedded Awareness"
-The project is specifically designed to run on resource-constrained hardware (e.g., TAI/ASELSAN edge devices).
+The intelligence core responsible for anomaly detection and classification.
 
-Deterministic Resource Limiting: Tested under strict Docker constraints (cpus: 0.5, memory: 512M) to simulate embedded system conditions.
+* **Machine Learning Models**:
 
-Memory Footprint Optimization: JVM tuning with custom Xmx and Xms flags to ensure stability without Garbage Collection (GC) overhead.
+  * *Isolation Forest* for detecting stochastic anomalies
+  * *Random Forest* for identifying deterministic malicious patterns (e.g., DDoS, port scanning)
+* **Real-Time Inference**:
 
-Benchmarking: Validated the performance gains of Virtual Threads over traditional threading models under restricted CPU cycles.
+  * Consumes telemetry from Kafka
+  * Executes ML inference
+  * Publishes anomaly alerts back to the orchestration layer
 
-🛠️ Tech Stack
-Language: Java 21 (Virtual Threads), Python 3.10
+---
 
-Streaming: Apache Kafka
+### 4️⃣ Processing & Visualization (Command Center)
 
-Caching/Fast-State: Redis
+High-density processing and visualization layer built with modern Java.
 
-Intelligence: Scikit-learn (Machine Learning)
+* **Java 21 + Project Loom**:
 
-Infrastructure: Docker & Docker Compose
+  * Uses `VirtualThreadPerTaskExecutor`
+  * Enables massive concurrency with minimal memory overhead compared to traditional threads
+* **Reactive Dashboard**:
 
-Visualization: Spring Boot (WebSockets) & Next.js
+  * Streams real-time alerts via WebSockets (Spring Boot)
+  * Visualized through a **Next.js** frontend for instant situational awareness
 
+---
 
-!!Note: To use it you need Geolite2 files!!
+## ⚙️ Optimization & Embedded Awareness
+
+Sentinel-System is optimized for deployment in constrained environments such as edge gateways and defense systems.
+
+* **Deterministic Resource Allocation**:
+
+  * Validated under strict Docker limits (`cpus: 0.5`, `memory: 512M`)
+* **JVM Tuning**:
+
+  * Custom `-Xms` and `-Xmx` settings
+  * Reduced GC overhead and latency spikes
+* **High Throughput**:
+
+  * Benchmarked to demonstrate the efficiency of **Virtual Threads** under limited CPU resources
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer               | Technologies                                    |
+| ------------------- | ----------------------------------------------- |
+| Languages           | Java 21 (Virtual Threads), Python 3.10          |
+| Messaging           | Apache Kafka                                    |
+| Persistence & Cache | PostgreSQL (Forensics), Redis (Real-Time State) |
+| Intelligence        | Scikit-learn                                    |
+| Infrastructure      | Docker, Docker Compose                          |
+| Frontend            | Next.js, Tailwind CSS, Lucide Icons             |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+* Docker
+* Docker Compose
+
+### GeoIP Databases
+
+For IP geolocation features, download and place the following files in the `resources` directory:
+
+* `GeoLite2-City.mmdb`
+* `GeoLite2-Country.mmdb`
+
+(Available from MaxMind)
+
+---
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/cnr-nar/SentinelAnalyzerProject.git
+   ```
+
+2. **Configure environment variables**
+   Update the `.env` file with your database credentials and required API keys.
+
+3. **Deploy the system**
+
+   ```bash
+   docker-compose up -d
+   ```
+
+---
+
+## 📝 Compliance & Standards
+
+* **Modular Architecture**: Follows clean code and modular design principles
+* **Forensic Persistence**: All critical alerts are stored in PostgreSQL for audit and investigation
+* **Automated Response**: Redis-based banning mechanisms enable rapid mitigation
+
+Designed for **high-integrity network environments**.
+
+---
+
+## 🔐 Sentinel-System
+
+**Security. Scalability. Sovereignty.**
