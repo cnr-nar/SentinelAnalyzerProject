@@ -9,6 +9,8 @@ export interface Alert {
   reason: string;
   country?: string;
   city?: string;
+  aiNote?: string;
+  timestamp?: string;
 }
 
 export const useSentinelWS = () => {
@@ -40,7 +42,7 @@ export const useSentinelWS = () => {
     return () => { if (client.active) client.deactivate(); };
   }, []);
 
-  return { alerts, isConnected };
+  return { alerts, isConnected, setAlerts };
 };
 
 export const useSentinelFirewall = () => {

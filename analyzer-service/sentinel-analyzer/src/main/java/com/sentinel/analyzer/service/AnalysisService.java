@@ -1,5 +1,7 @@
 package com.sentinel.analyzer.service;
 
+import com.sentinel.analyzer.model.AnomalyEvent;
+import com.sentinel.analyzer.repository.AnomalyRepository;
 import com.sentinel.shared.dto.PacketDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +17,14 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+
 public class AnalysisService {
     private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
     private final KafkaTemplate<String,Object> kafkaTemplate;
     private final StringRedisTemplate redisTemplate;
     private final ThreatIntelService threatIntelService;
+    @Autowired
+    private AnomalyRepository anomalyRepository;
 
     private static final List<String> MALICIOUS_SIGNATURES = List.of(
             "DROP TABLE", "SELECT * FROM", "OR 1=1", "--", //SQL Injection
@@ -96,6 +101,20 @@ public class AnalysisService {
         redisTemplate.opsForSet().add(bankey,packet.getSrc());
         redisTemplate.expire(bankey, Duration.ofMinutes(10));
         log.error(">>> IP BANNED: {}. Reason: {}.", packet.getSrc(),reason);
+
+        String aiNote = reason.contains("Blacklisted") ?
+                "CRITICAL: Known Threat Actor. 24h Global Ban applied." : "Standard mitigation." ;
+
+        AnomalyEvent event = AnomalyEvent.builder()
+                .srcIp(packet.getSrc())
+                .dstIp(packet.getDst())
+                .reason(reason)
+                .aiNote(aiNote)
+                .country(location.get("country"))
+                .city(location.get("city"))
+                .build();
+
+        anomalyRepository.save(event);
 
         Map<String, String> alertPayload = new HashMap<>();
         alertPayload.put("src", packet.getSrc());

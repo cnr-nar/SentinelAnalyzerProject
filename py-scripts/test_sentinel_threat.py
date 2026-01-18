@@ -16,18 +16,18 @@ def send_test_threat():
         "size": 1024
     }
 
-    print(f"🚀 Sentinel'e test paketi gönderiliyor: {malicious_ip}")
+    print(f" Sentinel'e test paketi gönderiliyor: {malicious_ip}")
     
     try:
         response = requests.post(URL, json=payload)
         if response.status_code == 200:
-            print("✅ Paket başarıyla gönderildi!")
-            print("💡 Dashboard'u kontrol et: Haritada yerini almalı ve kırmızı yanmalı.")
+            print("Paket başarıyla gönderildi!")
+            print("Dashboard'u kontrol et: Haritada yerini almalı ve kırmızı yanmalı.")
         else:
-            print(f"❌ Hata oluştu: {response.status_code}")
+            print(f"Hata oluştu: {response.status_code}")
             print(response.text)
     except Exception as e:
-        print(f"📡 Bağlantı hatası (Backend açık mı?): {e}")
+        print(f" Bağlantı hatası (Backend açık mı?): {e}")
 
 if __name__ == "__main__":
     send_test_threat()
